@@ -1,0 +1,47 @@
+# 🔐 Environment variables
+.env
+
+# 🐍 Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# 📦 Virtual environment
+venv/
+.env/
+.venv/
+
+# 📊 Data folders (optional - ignore if large)
+data/raw/
+data/processed/
+
+# 🗄️ ChromaDB (VERY IMPORTANT)
+chroma/
+*.db
+
+# 🧠 Model cache (sentence-transformers)
+.cache/
+huggingface/
+
+# 🖥️ Streamlit
+.streamlit/
+
+# 💻 OS files
+.DS_Store
+Thumbs.db
+
+# 📝 Logs
+*.log
+
+# 📁 IDEs
+.vscode/
+.idea/
+
+# 🧪 Jupyter (if used later)
+.ipynb_checkpoints/
+
+# 🚫 Misc
+*.bak
+*.swp
