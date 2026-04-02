@@ -1,0 +1,8 @@
+streamlit
+yt-dlp
+youtube-transcript-api
+sentence-transformers
+chromadb
+transformers
+torch
+sentencepiece
