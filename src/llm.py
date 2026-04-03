@@ -1,38 +1,51 @@
 import os
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-import torch
 from typing import List, Tuple, Optional
 
 # =====================================
-# 🔥 ENV DETECTION (IMPORTANT)
+# 🔥 ENV DETECTION
 # =====================================
 IS_DEPLOY = os.getenv("RENDER", "false") == "true"
 
 # =====================================
-# 🔥 MODEL LOADING
+# 🔥 GLOBALS (LAZY LOADING)
 # =====================================
+generator = None
+tokenizer = None
+model = None
+device = None
 
-if IS_DEPLOY:
-    # ✅ Lightweight model for Render (low memory)
-    generator = pipeline(
-        "text-generation",
-        model="sshleifer/tiny-gpt2"
-    )
-else:
-    # ✅ Better model for local development
-    MODEL_NAME = "google/flan-t5-small"
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+# =====================================
+# 🔥 MODEL LOADER (LAZY)
+# =====================================
+def load_model():
+    global generator, tokenizer, model, device
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    if IS_DEPLOY:
+        if generator is None:
+            from transformers import pipeline
+            generator = pipeline(
+                "text-generation",
+                model="sshleifer/tiny-gpt2"
+            )
+    else:
+        if model is None:
+            from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+            import torch
+
+            MODEL_NAME = "google/flan-t5-small"
+
+            tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+            model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model = model.to(device)
 
 
 # =====================================
 # 🔥 CONTEXT BUILDER
 # =====================================
-def build_context(docs: List[str], max_chars: int = 3000) -> str:
+def build_context(docs: List[str], max_chars: int = 2000) -> str:
     context = ""
     total = 0
 
@@ -55,8 +68,11 @@ def generate_answer(
     mode: str = "qa"
 ) -> Tuple[str, str]:
 
-    # Keep context small for stability
-    context = build_context(docs[:3])
+    # 🔥 Load model only when needed
+    load_model()
+
+    # Keep context small for speed + accuracy
+    context = build_context(docs[:2])
 
     prompt = f"""
 You are an AI assistant.
@@ -79,7 +95,7 @@ Answer:
     if IS_DEPLOY:
         response = generator(
             prompt,
-            max_length=150,
+            max_length=120,
             num_return_sequences=1
         )
 
@@ -103,7 +119,7 @@ Answer:
 
     outputs = model.generate(
         **inputs,
-        max_length=200,
+        max_length=150,
         num_beams=4,
         early_stopping=True
     )
